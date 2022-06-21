@@ -22,16 +22,12 @@ c.	Point Tambahan
  Hashing
 */
 
-/*
-    1. Jangan dikosongin saldonya, (Minimal : 50.000)
-    2. Bodoamat pecahannya berapa, yang penting saldo totalnya
-*/
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
 #define size 2
+#define limit 50000
 
 int hash[size]; //array untuk menyimpan nilai hash
 int i, j, counter = 0; //variabel bantuan
@@ -54,9 +50,17 @@ struct userData{ //menyimpan data user
     int pinTemp, pin;
     int temp1, temp2;
     int balance;
-    long long id;
+    int id;
     int historyTemp, history;
 } userData[50];
+
+typedef struct account{
+    int id;
+    int pin;
+    int balance;
+} account;
+
+account acc[3];
 
 struct llist{ //linked list
     int data;
@@ -68,6 +72,8 @@ int isEmpty(struct stackNode *);
 void push(struct stackNode **, int);
 int pop(struct stackNode **);
 int pushBack(int);
+
+void setAcc();
 
 void initHash();
 void insertHash(int);
@@ -94,12 +100,15 @@ void recentHistory();
 void allHistory();
 void specificHistory();
 
+int limitBalance();
+
 void main(){
     int cardNumber;
     FILE *fp, *fw;
+    setAcc();
     fp = fopen("data.txt", "r");
     while(!feof(fp)){
-        fscanf(fp, "%lld %d %d", &userData[i].id, &userData[i].pinTemp, &userData[i].balance);
+        fscanf(fp, "%d %d %d", &userData[i].id, &userData[i].pinTemp, &userData[i].balance);
         i++;
     }
     fclose(fp);
@@ -114,14 +123,6 @@ void main(){
     printf(" Insert your card number to continue : "); scanf("%d", &cardNumber); fflush(stdin);
     search(cardNumber);
     begin();
-    fw = fopen("dataTemp.txt", "w");
-    for(i = 0; i < size; i++){
-        fprintf(fw, "%lld %d %d\n", userData[i].id, userData[i].pinTemp, userData[i].balance);
-    }
-    fclose(fw);
-    remove("data.txt");
-    rename("dataTemp.txt", "data.txt");
-    system("cls");
     printf("======================================================\n");
     printf("         Group D6 - Final Project - ATM Program       \n");
     printf("======================================================\n");
@@ -186,11 +187,37 @@ void begin(){
             default:
                 break;
         }
+        FILE *fw;
+        fw = fopen("data.txt", "w");
+        for(i = 0; i < size; i++){
+            fprintf(fw, "%d %d %d\n", userData[i].id, userData[i].pinTemp, userData[i].balance);
+        }
+        fclose(fw);
         if(choice >= 1 && choice < 7){
             printf("\n "); 
             system("pause");
         }
-    }while(choice < '1' || choice > '7');
+    }while(choice < '1' || choice > '6');
+}
+
+void setAcc(){
+    if(fopen("data.txt", "r") == NULL){
+        FILE *fw;
+        int k;
+        fw = fopen("data.txt", "w");
+        acc[0].id = 1234;
+        acc[0].pin = 123456;
+        acc[0].balance = 500000;
+
+        acc[1].id = 4567;
+        acc[1].pin = 654321;
+        acc[1].balance = 300000;
+
+        for(k = 0; i < size; i++){
+            fprintf(fw, "%d %d %d\n", acc[i].id, acc[i].pin, acc[i].balance);
+        }
+        fclose(fw);
+    }
 }
 
 void deposit(){
@@ -291,6 +318,10 @@ void withdraw(){
         printf("======================================================\n");
         printf(" Enter your choice (1 - 5): "); scanf("%d", &choice); fflush(stdin);
         printf("\n");
+        int counter = limitBalance();
+        if(counter == 1){
+            main();
+        }
         switch(choice){
             case 1:
                 if(userData[keyTemp].balance < 100000){
@@ -367,6 +398,10 @@ void transfer(){
         printf("======================================================\n");
         printf(" Enter your choice (1 - 5): "); scanf("%d", &choice); fflush(stdin);
         printf("\n");
+        int counter = limitBalance();
+        if(counter == 1){
+            main();
+        }
         switch(choice){
             case 1:
                 if(userData[keyTemp].balance < 100000){
@@ -480,14 +515,6 @@ void changePin(){
         printf("======================================================\n");
         return begin();
     }
-    FILE *fw;
-    fw = fopen("dataTemp.txt", "w");
-    for(i = 0; i < size; i++){
-        fprintf(fw, "%lld %d %d\n", userData[i].id, userData[i].pinTemp, userData[i].balance);
-    }
-    fclose(fw);
-    remove("data.txt");
-    rename("dataTemp.txt", "data.txt");
 }
 
 void history(){
@@ -666,6 +693,7 @@ void initHash(){
 
 void insertHash(int value){
     key = value % size;
+    printf("%d\n", key);
     if(hash[key] == -1){
         hash[key] = value;
         printf("\n");
@@ -687,5 +715,15 @@ void search(int value){
         printf(" Card Number is not Verified!\n\n ");
         system("pause");
         return main();
+    }
+}
+
+int limitBalance(){
+    printf("\n");
+    if(userData[keyTemp].balance <= limit){
+        printf(" Your balance is below the limit!\n\n");
+        printf(" Your balance is %d\n\n ", userData[keyTemp].balance);
+        system("pause");
+        return 1;
     }
 }
